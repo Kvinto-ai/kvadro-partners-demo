@@ -2,6 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "kvadro-partners-demo-v2";
+  const DEMO_TODAY = "2026-08-07";
   const stages = ["Новый", "Встреча", "Расчёт", "Проектирование", "Согласование", "Договор", "Закрыт"];
   const commissionStatuses = ["Начислена", "Согласована", "К выплате", "Выплачена"];
   const months = ["янв.", "февр.", "мар.", "апр.", "мая", "июн.", "июл.", "авг.", "сент.", "окт.", "нояб.", "дек."];
@@ -152,7 +153,7 @@
     const d = new Date(value+"T12:00:00");
     return d.getDate()+" "+months[d.getMonth()]+" "+d.getFullYear();
   };
-  const daysSince = (value) => Math.floor((new Date("2026-08-07T12:00:00")-new Date(value+"T12:00:00"))/86400000);
+  const daysSince = (value) => Math.floor((new Date(DEMO_TODAY+"T12:00:00")-new Date(value+"T12:00:00"))/86400000);
   const conversion = (p) => p.requests ? Math.round(p.contracts/p.requests*100) : 0;
   const partnerById = id => data.partners.find(p=>p.id===id);
   const objectById = id => data.objects.find(o=>o.id===id);
@@ -170,7 +171,7 @@
   }
 
   function metric(label,value,note,icon="",extra=""){
-    return `<div class="metric-card ${extra}" ${extra.includes("clickable")?"tabindex=\"0\"":""}>
+    return `<div class="metric-card ${extra}" ${extra.includes("clickable")?'tabindex="0" role="button"':""}>
       <div class="metric-top"><span class="metric-label">${esc(label)}</span><span class="metric-icon">${esc(icon)}</span></div>
       <div><div class="metric-value">${esc(value)}</div><div class="metric-note">${note}</div></div>
     </div>`;
@@ -186,16 +187,18 @@
     setTimeout(()=>el.remove(),3200);
   }
 
-  function navigate(page){
+  function navigate(page, updateHistory=true){
     if(!$("#page-"+page)) return;
     currentPage=page;
-    $$(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+page));
-    $$(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
+    $(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+page));
+    $(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
     $("#breadcrumbTitle").textContent=$("#page-"+page).dataset.title;
     $("#sidebar").classList.remove("open");
     $("#sidebarBackdrop").classList.remove("open");
     window.scrollTo({top:0,behavior:"smooth"});
     renderPage(page);
+    const hash="#"+page;
+    if(updateHistory && location.hash!==hash) history.pushState({page},"",hash);
   }
 
   function renderAll(){
@@ -227,8 +230,17 @@
       metric("Комиссии к выплате",shortMoney(pending),"Ожидают проведения","₽","clickable"),
       metric("Ближайшие мероприятия",String(upcoming.length),upcoming[0]?dateRu(upcoming[0].date):"Не запланированы","●","clickable")
     ].join("");
-    const metricPages=["today","partners","partners","objects","commissions","events"];
-    $$("#todayMetrics .metric-card").forEach((el,i)=>el.onclick=()=>navigate(metricPages[i]));
+    const metricActions=["tasks","overdue","dormant","new-objects","pending-commissions","events"];
+    $("#todayMetrics .metric-card").forEach((el,i)=>{
+      el.dataset.summaryAction=metricActions[i];
+      el.onclick=()=>handleSummaryAction(metricActions[i]);
+      el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();handleSummaryAction(metricActions[i]);}};
+    });
+    const stalled=data.objects.filter(o=>o.stage<5&&daysSince(o.created)>7).length;
+    const alertCount=overdue.length+stalled+data.commissions.filter(c=>c.status==="К выплате").length;
+    $("#notificationCount").textContent=String(alertCount);
+    $("#notificationCount").hidden=alertCount===0;
+    $("#notificationBtn").setAttribute("aria-label",alertCount?alertCount+" записей требуют внимания":"Нет новых уведомлений");
 
     const visibleTasks=showCompletedTasks?data.tasks:data.tasks.filter(t=>!t.done);
     $("#tasksProgress").textContent=data.tasks.filter(t=>t.done).length+" из "+data.tasks.length+" выполнено";
@@ -255,6 +267,41 @@
     $("#nextEvent").innerHTML=event?`<div class="event-spotlight"><div class="event-date-box"><b>${new Date(event.date+"T12:00:00").getDate()}</b><span>${months[new Date(event.date+"T12:00:00").getMonth()]}<br>${new Date(event.date+"T12:00:00").getFullYear()}</span></div><h3>${esc(event.title)}</h3><p>${esc(event.place)} · ${esc(event.description)}</p><div class="event-stats"><div><b>${event.participants}</b><span>участников</span></div><div><b>${money(event.budget)}</b><span>бюджет</span></div><div><b>${event.requests}</b><span>план заявок</span></div></div><button class="secondary-button" data-open-type="event" data-open-id="${event.id}">Открыть мероприятие</button></div>`:"";
   }
 
+  function handleSummaryAction(action){
+    if(action==="tasks"){navigate("today");setTimeout(()=>$(".tasks-panel")?.scrollIntoView({behavior:"smooth",block:"start"}),0);return;}
+    if(action==="overdue"||action==="dormant"){
+      resetPartnerFilters(false);
+      $("#partnerActivityFilter").value=action;
+      navigate("partners");
+      return;
+    }
+    if(action==="new-objects"){
+      resetObjectFilters(false);
+      $("#objectRecencyFilter").value="7";
+      navigate("objects");
+      return;
+    }
+    if(action==="pending-commissions"){
+      commissionFilter="К выплате";
+      navigate("commissions");
+      return;
+    }
+    if(action==="events") navigate("events");
+  }
+
+  function resetPartnerFilters(shouldRender=true){
+    $("#partnerSearch").value="";
+    ["partnerTypeFilter","partnerRegionFilter","partnerCategoryFilter","partnerStatusFilter","partnerActivityFilter"].forEach(id=>$("#"+id).value="");
+    if(shouldRender)renderPartners();
+  }
+
+  function resetObjectFilters(shouldRender=true){
+    $("#objectSearch").value="";
+    $("#objectStageFilter").value="";
+    $("#objectRecencyFilter").value="";
+    if(shouldRender)renderObjects();
+  }
+
   function populatePartnerFilters(){
     const sets={partnerTypeFilter:[...new Set(data.partners.map(p=>p.type))],partnerRegionFilter:[...new Set(data.partners.map(p=>p.region))],partnerStatusFilter:[...new Set(data.partners.map(p=>p.status))]};
     Object.entries(sets).forEach(([id,values])=>{
@@ -265,10 +312,12 @@
   }
 
   function filteredPartners(){
-    const q=$("#partnerSearch").value.trim().toLowerCase(),type=$("#partnerTypeFilter").value,region=$("#partnerRegionFilter").value,cat=$("#partnerCategoryFilter").value,status=$("#partnerStatusFilter").value;
+    const q=$("#partnerSearch").value.trim().toLowerCase(),type=$("#partnerTypeFilter").value,region=$("#partnerRegionFilter").value,cat=$("#partnerCategoryFilter").value,status=$("#partnerStatusFilter").value,activity=$("#partnerActivityFilter").value;
     return data.partners.filter(p=>{
       const hay=[p.name,p.company,p.phone,p.email].join(" ").toLowerCase();
-      return (!q||hay.includes(q))&&(!type||p.type===type)&&(!region||p.region===region)&&(!cat||p.category===cat)&&(!status||p.status===status);
+      const age=daysSince(p.lastContact);
+      const activityMatch=!activity||(activity==="fresh"&&age<=14)||(activity==="overdue"&&age>14)||(activity==="dormant"&&age>30);
+      return (!q||hay.includes(q))&&(!type||p.type===type)&&(!region||p.region===region)&&(!cat||p.category===cat)&&(!status||p.status===status)&&activityMatch;
     });
   }
 
@@ -298,10 +347,10 @@
   }
 
   function filteredObjects(){
-    const q=$("#objectSearch").value.trim().toLowerCase(),stage=$("#objectStageFilter").value;
+    const q=$("#objectSearch").value.trim().toLowerCase(),stage=$("#objectStageFilter").value,recency=$("#objectRecencyFilter").value;
     return data.objects.filter(o=>{
       const p=partnerById(o.partnerId); const hay=[o.name,o.client,o.number,p?p.name:""].join(" ").toLowerCase();
-      return (!q||hay.includes(q))&&(stage===""||String(o.stage)===stage);
+      return (!q||hay.includes(q))&&(stage===""||String(o.stage)===stage)&&(!recency||daysSince(o.created)<=Number(recency));
     });
   }
 
@@ -310,6 +359,7 @@
     stageSelect.innerHTML='<option value="">Все этапы</option>'+stages.map((s,i)=>`<option value="${i}">${s}</option>`).join("");
     stageSelect.value=current;
     const list=filteredObjects();
+    $("#objectsFound").textContent="Найдено: "+list.length;
     $("#objectsEmpty").classList.toggle("hidden",list.length>0);
     $("#kanbanBoard").classList.toggle("hidden",objectView!=="kanban"||!list.length);
     $("#objectsTablePanel").classList.toggle("hidden",objectView!=="table"||!list.length);
@@ -404,13 +454,18 @@
   function renderCommissions(){
     const sums=commissionStatuses.map(st=>data.commissions.filter(c=>c.status===st).reduce((s,c)=>s+c.amount,0));
     $("#commissionMetrics").innerHTML=[
-      metric("Начислено",shortMoney(sums[0]),data.commissions.filter(c=>c.status==="Начислена").length+" позиций","₽"),
-      metric("Согласовано",shortMoney(sums[1]),data.commissions.filter(c=>c.status==="Согласована").length+" позиций","✓"),
-      metric("К выплате",shortMoney(sums[2]),data.commissions.filter(c=>c.status==="К выплате").length+" ожидают оплаты","!"),
-      metric("Выплачено",shortMoney(sums[3]),data.commissions.filter(c=>c.status==="Выплачена").length+" завершено","✓")
+      metric("Начислено",shortMoney(sums[0]),data.commissions.filter(c=>c.status==="Начислена").length+" позиций","₽","clickable"),
+      metric("Согласовано",shortMoney(sums[1]),data.commissions.filter(c=>c.status==="Согласована").length+" позиций","✓","clickable"),
+      metric("К выплате",shortMoney(sums[2]),data.commissions.filter(c=>c.status==="К выплате").length+" ожидают оплаты","!","clickable"),
+      metric("Выплачено",shortMoney(sums[3]),data.commissions.filter(c=>c.status==="Выплачена").length+" завершено","✓","clickable")
     ].join("");
-    $$("#commissionTabs button").forEach(b=>b.classList.toggle("active",b.dataset.status===commissionFilter));
+    $("#commissionMetrics .metric-card").forEach((el,i)=>{
+      el.onclick=()=>{commissionFilter=commissionStatuses[i];renderCommissions();};
+      el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();commissionFilter=commissionStatuses[i];renderCommissions();}};
+    });
+    $("#commissionTabs button").forEach(b=>b.classList.toggle("active",b.dataset.status===commissionFilter));
     const list=data.commissions.filter(c=>!commissionFilter||c.status===commissionFilter);
+    $("#commissionsEmpty").classList.toggle("hidden",list.length>0);
     $("#commissionsTableBody").innerHTML=list.map(c=>{
       const p=partnerById(c.partnerId),o=objectById(c.objectId),d=contractById(c.contractId),idx=commissionStatuses.indexOf(c.status);
       const action=idx<3?`<button class="action-button commission-action" data-id="${c.id}">${idx===0?"Согласовать":idx===1?"К выплате":"Отметить выплату"}</button>`:"<span class=\"muted\">Готово</span>";
@@ -460,6 +515,11 @@
     const participants=e.partnerIds.map(partnerById).filter(Boolean);
     $("#drawerBody").innerHTML=`<div class="detail-meta" style="margin-top:20px">${badge(e.status,statusClass(e.status))}${badge(dateRu(e.date),"blue")}</div><p class="muted" style="line-height:1.7">${esc(e.description)}</p><div class="info-grid"><div class="info-item"><span>Место</span><b>${esc(e.place)}</b></div><div class="info-item"><span>Расходы</span><b>${money(e.budget)}</b></div></div><div class="detail-stats"><div class="detail-stat"><b>${e.participants}</b><span>участников</span></div><div class="detail-stat"><b>${e.newPartners}</b><span>новых</span></div><div class="detail-stat"><b>${e.requests}</b><span>заявок</span></div><div class="detail-stat"><b>${e.contracts}</b><span>договоров</span></div></div><div class="detail-section"><h3>Результат</h3><div class="next-action"><div><span>Связанная выручка ${money(e.revenue)}</span><b>${esc(e.result)}</b></div></div></div><div class="detail-section"><h3>Партнёры-участники</h3><div class="detail-list" style="margin-top:10px">${participants.map(p=>`<div class="detail-list-row" data-open="partner" data-id="${p.id}" style="cursor:pointer"><b>${esc(p.name)}</b><span>${esc(p.type)}</span><span>${esc(p.region)}</span></div>`).join("")}</div></div>`;
     openDrawer();
+  }
+
+  function setQuickAdd(open){
+    $("#quickAddMenu").classList.toggle("open",open);
+    $("#quickAddBtn").setAttribute("aria-expanded",String(open));
   }
 
   function openDrawer(){
@@ -517,7 +577,7 @@
     const nav=e.target.closest("[data-navigate]");if(nav){navigate(nav.dataset.navigate);return;}
     const action=e.target.closest("[data-action]");if(action){
       const map={"add-partner":"partner","add-object":"object","add-contact":"contact"};
-      if(map[action.dataset.action]){openModal(map[action.dataset.action],{partnerId:action.dataset.partnerId});$("#quickAddMenu").classList.remove("open");return;}
+      if(map[action.dataset.action]){openModal(map[action.dataset.action],{partnerId:action.dataset.partnerId});setQuickAdd(false);return;}
     }
     const open=e.target.closest("[data-open]");if(open){openByType(open.dataset.open,open.dataset.id);return;}
     const typed=e.target.closest("[data-open-type]");if(typed){openByType(typed.dataset.openType,typed.dataset.openId);return;}
@@ -527,17 +587,17 @@
   $("#mainNav").addEventListener("click",e=>{const b=e.target.closest(".nav-item");if(b)navigate(b.dataset.page)});
   $("#menuBtn").onclick=()=>{$("#sidebar").classList.add("open");$("#sidebarBackdrop").classList.add("open")};
   $("#sidebarBackdrop").onclick=()=>{$("#sidebar").classList.remove("open");$("#sidebarBackdrop").classList.remove("open")};
-  $("#quickAddBtn").onclick=e=>{e.stopPropagation();$("#quickAddMenu").classList.toggle("open")};
-  document.addEventListener("click",e=>{if(!e.target.closest(".add-menu-wrap"))$("#quickAddMenu").classList.remove("open")});
-  $("#notificationBtn").onclick=()=>{navigate("today");toast("3 записи требуют внимания","Просроченные контакты и комиссия к выплате")};
+  $("#quickAddBtn").onclick=e=>{e.stopPropagation();setQuickAdd(!$("#quickAddMenu").classList.contains("open"))};
+  document.addEventListener("click",e=>{if(!e.target.closest(".add-menu-wrap"))setQuickAdd(false)});
+  $("#notificationBtn").onclick=()=>{navigate("today");setTimeout(()=>$(".attention-panel")?.scrollIntoView({behavior:"smooth",block:"start"}),0)};
   $("#showAllTasksBtn").onclick=()=>{showCompletedTasks=!showCompletedTasks;renderToday()};
   $("#taskList").addEventListener("change",e=>{if(e.target.matches(".task-check")){const t=data.tasks.find(x=>x.id===e.target.dataset.taskId);if(t){t.done=e.target.checked;save();renderToday();toast(t.done?"Задача выполнена":"Задача возвращена",t.title)}}});
-  ["partnerSearch","partnerTypeFilter","partnerRegionFilter","partnerCategoryFilter","partnerStatusFilter"].forEach(id=>$("#"+id).addEventListener(id==="partnerSearch"?"input":"change",renderPartners));
-  $("#partnerFiltersReset").onclick=()=>{$("#partnerSearch").value="";["partnerTypeFilter","partnerRegionFilter","partnerCategoryFilter","partnerStatusFilter"].forEach(id=>$("#"+id).value="");renderPartners()};
-  $("#partnersTableBody").addEventListener("click",e=>{const tr=e.target.closest("[data-open='partner']");if(tr)openPartner(tr.dataset.id)});
-  $("#objectSearch").addEventListener("input",renderObjects);$("#objectStageFilter").addEventListener("change",renderObjects);
-  $$(".view-switch button").forEach(b=>b.onclick=()=>{objectView=b.dataset.objectView;renderObjects()});
-  $("#objectsTableBody").addEventListener("click",e=>{const tr=e.target.closest("[data-open='object']");if(tr)openObject(tr.dataset.id)});
+  ["partnerSearch","partnerTypeFilter","partnerRegionFilter","partnerCategoryFilter","partnerStatusFilter","partnerActivityFilter"].forEach(id=>$("#"+id).addEventListener(id==="partnerSearch"?"input":"change",renderPartners));
+  $("#partnerFiltersReset").onclick=()=>resetPartnerFilters();
+  $("#objectSearch").addEventListener("input",renderObjects);
+  ["objectStageFilter","objectRecencyFilter"].forEach(id=>$("#"+id).addEventListener("change",renderObjects));
+  $("#objectFiltersReset").onclick=()=>resetObjectFilters();
+  $(".view-switch button").forEach(b=>b.onclick=()=>{objectView=b.dataset.objectView;renderObjects()});
   $("#periodSwitch").onclick=e=>{const b=e.target.closest("[data-period]");if(b){data.analyticsPeriod=Number(b.dataset.period);save();renderAnalytics();toast("Период аналитики изменён",b.textContent)}};
   $("#commissionTabs").onclick=e=>{const b=e.target.closest("[data-status]");if(b){commissionFilter=b.dataset.status;renderCommissions()}};
   $("#commissionsTableBody").onclick=e=>{const b=e.target.closest(".commission-action");if(b){const c=data.commissions.find(x=>x.id===b.dataset.id);if(c){const idx=commissionStatuses.indexOf(c.status);c.status=commissionStatuses[Math.min(idx+1,3)];save();renderAll();toast("Статус комиссии обновлён",c.status)}}};
@@ -547,10 +607,20 @@
   $("#modalForm").addEventListener("submit",e=>{e.preventDefault();if(e.currentTarget.reportValidity())submitModal(e.currentTarget)});
   $("#resetDemoBtn").onclick=()=>$("#confirmBackdrop").classList.add("open");
   $("#cancelResetBtn").onclick=()=>$("#confirmBackdrop").classList.remove("open");
+  $("#confirmBackdrop").addEventListener("click",e=>{if(e.target===$("#confirmBackdrop"))$("#confirmBackdrop").classList.remove("open")});
   $("#confirmResetBtn").onclick=()=>{localStorage.removeItem(STORAGE_KEY);data=defaultData();$("#confirmBackdrop").classList.remove("open");closeDrawer();renderAll();navigate("today");toast("Демо восстановлено","Исходные данные загружены")};
-  document.addEventListener("keydown",e=>{if(e.key==="Escape"){if($("#modalBackdrop").classList.contains("open"))closeModal();else if($("#detailDrawer").classList.contains("open"))closeDrawer();else $("#quickAddMenu").classList.remove("open")}});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"){
+    if($("#confirmBackdrop").classList.contains("open"))$("#confirmBackdrop").classList.remove("open");
+    else if($("#modalBackdrop").classList.contains("open"))closeModal();
+    else if($("#detailDrawer").classList.contains("open"))closeDrawer();
+    else if($("#sidebar").classList.contains("open")){$("#sidebar").classList.remove("open");$("#sidebarBackdrop").classList.remove("open");}
+    else setQuickAdd(false);
+  }});
+  window.addEventListener("popstate",()=>navigate(location.hash.slice(1)||"today",false));
 
   $("#todayDate").textContent="Пятница, 7 августа 2026";
   renderAll();
-  navigate("today");
+  const initialPage=$("#page-"+location.hash.slice(1))?location.hash.slice(1):"today";
+  history.replaceState({page:initialPage},"","#"+initialPage);
+  navigate(initialPage,false);
 })();
