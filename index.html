@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f5f2ec">
+  <meta name="description" content="Интерактивная демонстрация системы управления партнёрами мебельной студии Квадро">
+  <title>Квадро Партнёры</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Основная навигация">
+      <div class="brand">
+        <div class="brand-mark">К</div>
+        <div><strong>Квадро</strong><span>Партнёры</span></div>
+      </div>
+      <nav class="main-nav" id="mainNav">
+        <button class="nav-item active" data-page="today"><span class="nav-icon">01</span><span>Сегодня</span></button>
+        <button class="nav-item" data-page="partners"><span class="nav-icon">02</span><span>Партнёры</span><span class="nav-count" id="partnersNavCount">20</span></button>
+        <button class="nav-item" data-page="objects"><span class="nav-icon">03</span><span>Объекты</span><span class="nav-count" id="objectsNavCount">25</span></button>
+        <button class="nav-item" data-page="analytics"><span class="nav-icon">04</span><span>Аналитика</span></button>
+        <button class="nav-item" data-page="events"><span class="nav-icon">05</span><span>Мероприятия</span></button>
+        <button class="nav-item" data-page="commissions"><span class="nav-icon">06</span><span>Комиссии</span></button>
+      </nav>
+      <div class="sidebar-note">
+        <span class="status-dot"></span>
+        <div><strong>Демо-режим</strong><small>Данные хранятся в браузере</small></div>
+      </div>
+      <button class="ghost-button reset-demo" id="resetDemoBtn">Восстановить демо</button>
+    </aside>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-button menu-button" id="menuBtn" aria-label="Открыть меню">☰</button>
+        <div class="breadcrumbs"><span>Квадро</span><b>/</b><strong id="breadcrumbTitle">Сегодня</strong></div>
+        <div class="top-actions">
+          <button class="icon-button notification-button" id="notificationBtn" aria-label="Уведомления">
+            <span>●</span><i>3</i>
+          </button>
+          <div class="add-menu-wrap">
+            <button class="primary-button" id="quickAddBtn"><span>＋</span> Добавить <span class="chevron">⌄</span></button>
+            <div class="dropdown-menu" id="quickAddMenu">
+              <button data-action="add-partner">Нового партнёра</button>
+              <button data-action="add-object">Новый объект</button>
+              <button data-action="add-contact">Контакт с партнёром</button>
+            </div>
+          </div>
+          <div class="user-chip"><span>АП</span><div><b>Анна Петрова</b><small>Собственник</small></div></div>
+        </div>
+      </header>
+
+      <div class="content">
+        <section class="page active" id="page-today" data-title="Сегодня">
+          <div class="page-heading">
+            <div><p class="eyebrow" id="todayDate">Пятница, 7 августа</p><h1>Доброе утро, Анна</h1><p>Короткая сводка по партнёрскому каналу и делам на сегодня.</p></div>
+            <button class="secondary-button" data-action="add-contact">＋ Зафиксировать контакт</button>
+          </div>
+          <div class="metrics-grid today-metrics" id="todayMetrics"></div>
+          <div class="dashboard-grid">
+            <article class="panel tasks-panel">
+              <div class="panel-header"><div><h2>Задачи на сегодня</h2><p id="tasksProgress">0 из 0 выполнено</p></div><button class="text-button" id="showAllTasksBtn">Показать все</button></div>
+              <div class="task-list" id="taskList"></div>
+            </article>
+            <article class="panel attention-panel">
+              <div class="panel-header"><div><h2>Требует внимания</h2><p>Контакты и объекты без движения</p></div></div>
+              <div id="attentionList" class="attention-list"></div>
+            </article>
+          </div>
+          <div class="dashboard-grid lower-grid">
+            <article class="panel">
+              <div class="panel-header"><div><h2>Новые объекты</h2><p>Последние добавленные заявки</p></div><button class="text-button" data-navigate="objects">Все объекты →</button></div>
+              <div class="compact-table" id="recentObjects"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-header"><div><h2>Ближайшее мероприятие</h2><p>Работа с партнёрским сообществом</p></div><button class="text-button" data-navigate="events">Все мероприятия →</button></div>
+              <div id="nextEvent"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="page" id="page-partners" data-title="Партнёры">
+          <div class="page-heading">
+            <div><p class="eyebrow">Партнёрская база</p><h1>Партнёры</h1><p>Дизайнеры, архитекторы, строители и другие источники рекомендаций.</p></div>
+            <button class="primary-button" data-action="add-partner">＋ Добавить партнёра</button>
+          </div>
+          <div class="metrics-grid mini-metrics" id="partnerMetrics"></div>
+          <article class="panel table-panel">
+            <div class="toolbar">
+              <label class="search-field"><span>⌕</span><input id="partnerSearch" type="search" placeholder="Найти по имени, компании или телефону"></label>
+              <div class="filters">
+                <select id="partnerTypeFilter" aria-label="Тип партнёра"><option value="">Все типы</option></select>
+                <select id="partnerRegionFilter" aria-label="Регион"><option value="">Все регионы</option></select>
+                <select id="partnerCategoryFilter" aria-label="Категория"><option value="">Все категории</option><option>A</option><option>B</option><option>C</option></select>
+                <select id="partnerStatusFilter" aria-label="Статус"><option value="">Все статусы</option></select>
+                <button class="filter-reset" id="partnerFiltersReset">Сбросить</button>
+              </div>
+            </div>
+            <div class="table-summary"><span id="partnersFound">Найдено: 20</span><span>Нажмите на строку, чтобы открыть карточку</span></div>
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Партнёр</th><th>Тип / регион</th><th>Кат.</th><th>Статус</th><th>Заявки</th><th>Договоры</th><th>Конверсия</th><th>Выручка</th><th>Комиссия</th><th>Последний контакт</th></tr></thead>
+                <tbody id="partnersTableBody"></tbody>
+              </table>
+            </div>
+            <div class="empty-state hidden" id="partnersEmpty"><b>Ничего не найдено</b><p>Измените запрос или сбросьте фильтры.</p></div>
+          </article>
+        </section>
+
+        <section class="page" id="page-objects" data-title="Объекты">
+          <div class="page-heading">
+            <div><p class="eyebrow">Партнёрская воронка</p><h1>Объекты</h1><p>25 объектов от первой рекомендации до закрытой сделки.</p></div>
+            <button class="primary-button" data-action="add-object">＋ Добавить объект</button>
+          </div>
+          <div class="object-toolbar panel">
+            <label class="search-field"><span>⌕</span><input id="objectSearch" type="search" placeholder="Поиск по объекту, клиенту или партнёру"></label>
+            <select id="objectStageFilter" aria-label="Этап объекта"><option value="">Все этапы</option></select>
+            <div class="view-switch" role="group" aria-label="Вид объектов">
+              <button class="active" data-object-view="kanban">Канбан</button><button data-object-view="table">Таблица</button>
+            </div>
+          </div>
+          <div class="kanban" id="kanbanBoard"></div>
+          <article class="panel table-panel hidden" id="objectsTablePanel">
+            <div class="table-scroll"><table><thead><tr><th>Объект</th><th>Клиент</th><th>Партнёр</th><th>Этап</th><th>Бюджет</th><th>Следующее действие</th></tr></thead><tbody id="objectsTableBody"></tbody></table></div>
+          </article>
+          <div class="empty-state panel hidden" id="objectsEmpty"><b>Объекты не найдены</b><p>Попробуйте изменить фильтр или поисковый запрос.</p></div>
+        </section>
+
+        <section class="page" id="page-analytics" data-title="Аналитика">
+          <div class="page-heading">
+            <div><p class="eyebrow">Управленческая сводка</p><h1>Аналитика</h1><p>Главные показатели партнёрского канала в одном окне.</p></div>
+            <div class="period-switch" id="periodSwitch"><button data-period="30">30 дней</button><button class="active" data-period="90">90 дней</button><button data-period="365">Год</button></div>
+          </div>
+          <div class="metrics-grid analytics-metrics" id="analyticsMetrics"></div>
+          <div class="analytics-grid">
+            <article class="panel"><div class="panel-header"><div><h2>Партнёрская воронка</h2><p>Переход от заявки к договору</p></div></div><div id="funnelChart" class="funnel-chart"></div></article>
+            <article class="panel"><div class="panel-header"><div><h2>Категории партнёров</h2><p>Распределение базы A / B / C</p></div></div><div id="categoryChart" class="bar-chart"></div></article>
+            <article class="panel"><div class="panel-header"><div><h2>Партнёры по регионам</h2><p>География активной базы</p></div></div><div id="regionChart" class="bar-chart"></div></article>
+            <article class="panel ranking-panel"><div class="panel-header"><div><h2>Рейтинг партнёров</h2><p>По партнёрской выручке</p></div><button class="text-button" data-navigate="partners">Открыть базу →</button></div><div id="partnerRanking"></div></article>
+          </div>
+        </section>
+
+        <section class="page" id="page-events" data-title="Мероприятия">
+          <div class="page-heading">
+            <div><p class="eyebrow">Развитие сообщества</p><h1>Мероприятия</h1><p>Расходы, участники и измеримый результат каждой активности.</p></div>
+          </div>
+          <div class="metrics-grid mini-metrics" id="eventMetrics"></div>
+          <div class="event-grid" id="eventGrid"></div>
+        </section>
+
+        <section class="page" id="page-commissions" data-title="Комиссии">
+          <div class="page-heading">
+            <div><p class="eyebrow">Расчёты с партнёрами</p><h1>Комиссии</h1><p>Прозрачный реестр начислений и выплат по договорам.</p></div>
+          </div>
+          <div class="metrics-grid commission-summary" id="commissionMetrics"></div>
+          <article class="panel table-panel">
+            <div class="status-tabs" id="commissionTabs">
+              <button class="active" data-status="">Все</button>
+              <button data-status="Начислена">Начисленные</button>
+              <button data-status="Согласована">Согласованные</button>
+              <button data-status="К выплате">Ожидают выплаты</button>
+              <button data-status="Выплачена">Выплаченные</button>
+            </div>
+            <div class="table-scroll"><table><thead><tr><th>Партнёр</th><th>Объект / договор</th><th>База</th><th>Ставка</th><th>Комиссия</th><th>Статус</th><th>Плановая дата</th><th></th></tr></thead><tbody id="commissionsTableBody"></tbody></table></div>
+          </article>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="drawer" id="detailDrawer" aria-label="Карточка">
+    <div class="drawer-header"><div id="drawerHeading"></div><button class="icon-button" id="closeDrawerBtn" aria-label="Закрыть">×</button></div>
+    <div class="drawer-body" id="drawerBody"></div>
+  </aside>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header"><div><p class="eyebrow" id="modalEyebrow">Новая запись</p><h2 id="modalTitle">Добавить</h2></div><button class="icon-button" id="closeModalBtn" aria-label="Закрыть">×</button></div>
+      <form id="modalForm"><div class="modal-body" id="modalBody"></div><div class="modal-footer"><button type="button" class="secondary-button" id="cancelModalBtn">Отмена</button><button type="submit" class="primary-button" id="modalSubmitBtn">Сохранить</button></div></form>
+    </div>
+  </div>
+
+  <div class="confirm-backdrop" id="confirmBackdrop">
+    <div class="confirm-card"><h3>Восстановить исходное демо?</h3><p>Добавленные записи и изменения статусов в этом браузере будут удалены.</p><div><button class="secondary-button" id="cancelResetBtn">Отмена</button><button class="danger-button" id="confirmResetBtn">Восстановить</button></div></div>
+  </div>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite"></div>
+  <script src="./app.js"></script>
+</body>
+</html>
