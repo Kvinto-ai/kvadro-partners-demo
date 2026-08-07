@@ -126,7 +126,7 @@ test("объекты: фильтры, виды, карточка, этап и н
 
   await page.locator('[data-object-view="table"]').click();
   await expect(page.locator("#objectsTablePanel")).toBeVisible();
-  const firstName = (await page.locator("#objectsTableBody tr").first().locator("td").first().innerText()).trim();
+  const firstName = (await page.locator("#objectsTableBody tr").first().locator("td").first().locator("b").innerText()).trim();
   await page.locator("#objectsTableBody tr").first().click();
   await expect(page.locator("#detailDrawer")).toHaveClass(/open/);
   await page.locator("#drawerStageSelect").selectOption("6");
@@ -157,7 +157,7 @@ test("объекты: фильтры, виды, карточка, этап и н
 test("перетаскивание карточки канбана меняет этап", async ({ page }) => {
   await go(page, "objects");
   const source = page.locator('.kanban-column[data-stage="0"] .object-card').first();
-  const target = page.locator('.kanban-column[data-stage="1"] .kanban-list');
+  const target = page.locator('.kanban-column[data-stage="1"]');
   await expect(source).toBeVisible();
   const objectId = await source.getAttribute("data-object-id");
   await source.dragTo(target);
