@@ -190,8 +190,8 @@
   function navigate(page, updateHistory=true){
     if(!$("#page-"+page)) return;
     currentPage=page;
-    $(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+page));
-    $(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
+    $$(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+page));
+    $$(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
     $("#breadcrumbTitle").textContent=$("#page-"+page).dataset.title;
     $("#sidebar").classList.remove("open");
     $("#sidebarBackdrop").classList.remove("open");
@@ -231,7 +231,7 @@
       metric("Ближайшие мероприятия",String(upcoming.length),upcoming[0]?dateRu(upcoming[0].date):"Не запланированы","●","clickable")
     ].join("");
     const metricActions=["tasks","overdue","dormant","new-objects","pending-commissions","events"];
-    $("#todayMetrics .metric-card").forEach((el,i)=>{
+    $$("#todayMetrics .metric-card").forEach((el,i)=>{
       el.dataset.summaryAction=metricActions[i];
       el.onclick=()=>handleSummaryAction(metricActions[i]);
       el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();handleSummaryAction(metricActions[i]);}};
@@ -459,11 +459,11 @@
       metric("К выплате",shortMoney(sums[2]),data.commissions.filter(c=>c.status==="К выплате").length+" ожидают оплаты","!","clickable"),
       metric("Выплачено",shortMoney(sums[3]),data.commissions.filter(c=>c.status==="Выплачена").length+" завершено","✓","clickable")
     ].join("");
-    $("#commissionMetrics .metric-card").forEach((el,i)=>{
+    $$("#commissionMetrics .metric-card").forEach((el,i)=>{
       el.onclick=()=>{commissionFilter=commissionStatuses[i];renderCommissions();};
       el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();commissionFilter=commissionStatuses[i];renderCommissions();}};
     });
-    $("#commissionTabs button").forEach(b=>b.classList.toggle("active",b.dataset.status===commissionFilter));
+    $$("#commissionTabs button").forEach(b=>b.classList.toggle("active",b.dataset.status===commissionFilter));
     const list=data.commissions.filter(c=>!commissionFilter||c.status===commissionFilter);
     $("#commissionsEmpty").classList.toggle("hidden",list.length>0);
     $("#commissionsTableBody").innerHTML=list.map(c=>{
@@ -597,7 +597,7 @@
   $("#objectSearch").addEventListener("input",renderObjects);
   ["objectStageFilter","objectRecencyFilter"].forEach(id=>$("#"+id).addEventListener("change",renderObjects));
   $("#objectFiltersReset").onclick=()=>resetObjectFilters();
-  $(".view-switch button").forEach(b=>b.onclick=()=>{objectView=b.dataset.objectView;renderObjects()});
+  $$(".view-switch button").forEach(b=>b.onclick=()=>{objectView=b.dataset.objectView;renderObjects()});
   $("#periodSwitch").onclick=e=>{const b=e.target.closest("[data-period]");if(b){data.analyticsPeriod=Number(b.dataset.period);save();renderAnalytics();toast("Период аналитики изменён",b.textContent)}};
   $("#commissionTabs").onclick=e=>{const b=e.target.closest("[data-status]");if(b){commissionFilter=b.dataset.status;renderCommissions()}};
   $("#commissionsTableBody").onclick=e=>{const b=e.target.closest(".commission-action");if(b){const c=data.commissions.find(x=>x.id===b.dataset.id);if(c){const idx=commissionStatuses.indexOf(c.status);c.status=commissionStatuses[Math.min(idx+1,3)];save();renderAll();toast("Статус комиссии обновлён",c.status)}}};
