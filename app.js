@@ -383,7 +383,7 @@
   let draggedObjectId="";
 
   function bindKanban(){
-    $(".object-card").forEach(card=>{
+    $$(".object-card").forEach(card=>{
       card.addEventListener("dragstart",e=>{
         draggedObjectId=card.dataset.objectId;
         card.classList.add("dragging");
@@ -395,11 +395,11 @@
       card.addEventListener("dragend",()=>{
         card.classList.remove("dragging");
         draggedObjectId="";
-        $(".kanban-column").forEach(col=>col.classList.remove("drag-over"));
+        $$(".kanban-column").forEach(col=>col.classList.remove("drag-over"));
       });
       card.addEventListener("click",()=>openObject(card.dataset.objectId));
     });
-    $(".kanban-column").forEach(col=>{
+    $$(".kanban-column").forEach(col=>{
       col.addEventListener("dragover",e=>{
         e.preventDefault();
         if(e.dataTransfer)e.dataTransfer.dropEffect="move";
