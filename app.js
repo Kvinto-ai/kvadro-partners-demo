@@ -91,6 +91,16 @@
       status:commissionStatuses[i%4], dueDate:"2026-"+(i<7?"08":"09")+"-"+String(10+(i%16)).padStart(2,"0")
     }));
 
+    partners.forEach(p => {
+      const partnerObjects = objects.filter(o => o.partnerId === p.id);
+      const partnerContracts = contracts.filter(c => c.partnerId === p.id);
+      const partnerCommissions = commissions.filter(c => c.partnerId === p.id);
+      p.requests = partnerObjects.length;
+      p.contracts = partnerContracts.length;
+      p.revenue = partnerContracts.reduce((sum, c) => sum + c.amount, 0);
+      p.commission = partnerCommissions.reduce((sum, c) => sum + c.amount, 0);
+    });
+
     const events = [
       {id:"E001",title:"Закрытый завтрак для дизайнеров",date:"2026-08-20",place:"Студия «Квадро»",status:"Запланировано",budget:65000,participants:24,newPartners:8,requests:5,contracts:2,revenue:2460000,result:"Ожидаемая окупаемость ×37,8",partnerIds:partners.slice(0,8).map(p=>p.id),description:"Камерная встреча с презентацией новых материалов, разбором кейсов и знакомством с производством."},
       {id:"E002",title:"Экскурсия на производство",date:"2026-07-18",place:"Производственная площадка",status:"Проведено",budget:38000,participants:16,newPartners:5,requests:4,contracts:2,revenue:1980000,result:"Окупаемость ×52,1",partnerIds:partners.slice(5,14).map(p=>p.id),description:"Показали полный путь заказа от проекта до монтажа и ответили на технические вопросы."},
