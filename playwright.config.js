@@ -8,7 +8,8 @@ module.exports = defineConfig({
   workers: 1,
   reporter: [
     ["list"],
-    ["html", { outputFolder: "playwright-report", open: "never" }]
+    ["html", { outputFolder: "playwright-report", open: "never" }],
+    ["json", { outputFile: "test-results/results.json" }]
   ],
   use: {
     baseURL: "https://kvinto-ai.github.io/kvadro-partners-demo/",
