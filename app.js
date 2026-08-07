@@ -380,19 +380,46 @@
     return `<article class="object-card" draggable="true" data-object-id="${o.id}"><div class="object-card-top"><h4>${esc(o.name)}</h4><span class="object-number">${esc(o.number)}</span></div><div class="object-client">${esc(o.client)}</div><div class="object-partner"><span class="avatar green">${p?initials(p.name):"—"}</span><span>${esc(p?p.name:"Без партнёра")}</span></div><div class="object-foot"><b>${shortMoney(o.budget)}</b><span>до ${dateRu(o.nextDate).replace(" 2026","")}</span></div></article>`;
   }
 
+  let draggedObjectId="";
+
   function bindKanban(){
-    $$(".object-card").forEach(card=>{
-      card.addEventListener("dragstart",e=>{card.classList.add("dragging");e.dataTransfer.setData("text/plain",card.dataset.objectId)});
-      card.addEventListener("dragend",()=>card.classList.remove("dragging"));
+    $(".object-card").forEach(card=>{
+      card.addEventListener("dragstart",e=>{
+        draggedObjectId=card.dataset.objectId;
+        card.classList.add("dragging");
+        if(e.dataTransfer){
+          e.dataTransfer.effectAllowed="move";
+          e.dataTransfer.setData("text/plain",draggedObjectId);
+        }
+      });
+      card.addEventListener("dragend",()=>{
+        card.classList.remove("dragging");
+        draggedObjectId="";
+        $(".kanban-column").forEach(col=>col.classList.remove("drag-over"));
+      });
       card.addEventListener("click",()=>openObject(card.dataset.objectId));
     });
-    $$(".kanban-column").forEach(col=>{
-      col.addEventListener("dragover",e=>{e.preventDefault();col.classList.add("drag-over")});
-      col.addEventListener("dragleave",()=>col.classList.remove("drag-over"));
+    $(".kanban-column").forEach(col=>{
+      col.addEventListener("dragover",e=>{
+        e.preventDefault();
+        if(e.dataTransfer)e.dataTransfer.dropEffect="move";
+        col.classList.add("drag-over");
+      });
+      col.addEventListener("dragleave",e=>{
+        if(!col.contains(e.relatedTarget))col.classList.remove("drag-over");
+      });
       col.addEventListener("drop",e=>{
-        e.preventDefault();col.classList.remove("drag-over");
-        const o=objectById(e.dataTransfer.getData("text/plain"));
-        if(o){o.stage=Number(col.dataset.stage);save();renderAll();toast("Этап объекта изменён",stages[o.stage]);}
+        e.preventDefault();
+        col.classList.remove("drag-over");
+        const transferredId=e.dataTransfer?e.dataTransfer.getData("text/plain"):"";
+        const o=objectById(transferredId||draggedObjectId);
+        draggedObjectId="";
+        if(o){
+          o.stage=Number(col.dataset.stage);
+          save();
+          renderAll();
+          toast("Этап объекта изменён",stages[o.stage]);
+        }
       });
     });
   }
