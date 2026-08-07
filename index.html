@@ -38,11 +38,11 @@
         <div class="breadcrumbs"><span>Квадро</span><b>/</b><strong id="breadcrumbTitle">Сегодня</strong></div>
         <div class="top-actions">
           <button class="icon-button notification-button" id="notificationBtn" aria-label="Уведомления">
-            <span>●</span><i>3</i>
+            <span>●</span><i id="notificationCount">3</i>
           </button>
           <div class="add-menu-wrap">
-            <button class="primary-button" id="quickAddBtn"><span>＋</span> Добавить <span class="chevron">⌄</span></button>
-            <div class="dropdown-menu" id="quickAddMenu">
+            <button class="primary-button" id="quickAddBtn" aria-haspopup="menu" aria-expanded="false"><span>＋</span> Добавить <span class="chevron">⌄</span></button>
+            <div class="dropdown-menu" id="quickAddMenu" role="menu">
               <button data-action="add-partner">Нового партнёра</button>
               <button data-action="add-object">Новый объект</button>
               <button data-action="add-contact">Контакт с партнёром</button>
@@ -95,6 +95,12 @@
                 <select id="partnerRegionFilter" aria-label="Регион"><option value="">Все регионы</option></select>
                 <select id="partnerCategoryFilter" aria-label="Категория"><option value="">Все категории</option><option>A</option><option>B</option><option>C</option></select>
                 <select id="partnerStatusFilter" aria-label="Статус"><option value="">Все статусы</option></select>
+                <select id="partnerActivityFilter" aria-label="Давность контакта">
+                  <option value="">Любая активность</option>
+                  <option value="fresh">Контакт за 14 дней</option>
+                  <option value="overdue">Нет контакта более 14 дней</option>
+                  <option value="dormant">Без активности более 30 дней</option>
+                </select>
                 <button class="filter-reset" id="partnerFiltersReset">Сбросить</button>
               </div>
             </div>
@@ -117,6 +123,13 @@
           <div class="object-toolbar panel">
             <label class="search-field"><span>⌕</span><input id="objectSearch" type="search" placeholder="Поиск по объекту, клиенту или партнёру"></label>
             <select id="objectStageFilter" aria-label="Этап объекта"><option value="">Все этапы</option></select>
+            <select id="objectRecencyFilter" aria-label="Дата добавления объекта">
+              <option value="">За всё время</option>
+              <option value="7">Новые за 7 дней</option>
+              <option value="30">Новые за 30 дней</option>
+            </select>
+            <button class="filter-reset" id="objectFiltersReset">Сбросить</button>
+            <span class="toolbar-count" id="objectsFound">Найдено: 25</span>
             <div class="view-switch" role="group" aria-label="Вид объектов">
               <button class="active" data-object-view="kanban">Канбан</button><button data-object-view="table">Таблица</button>
             </div>
@@ -164,6 +177,7 @@
               <button data-status="Выплачена">Выплаченные</button>
             </div>
             <div class="table-scroll"><table><thead><tr><th>Партнёр</th><th>Объект / договор</th><th>База</th><th>Ставка</th><th>Комиссия</th><th>Статус</th><th>Плановая дата</th><th></th></tr></thead><tbody id="commissionsTableBody"></tbody></table></div>
+            <div class="empty-state hidden" id="commissionsEmpty"><b>В этом статусе комиссий нет</b><p>Выберите другой статус или откройте вкладку «Все».</p></div>
           </article>
         </section>
       </div>
